@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 my-proc-macro = "0.1"
+panic-halt = "*"

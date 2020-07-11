@@ -6,3 +6,9 @@ members = [
 
 [patch.crates-io]
 my-proc-macro = { path = "./my-proc-macro" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
