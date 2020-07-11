@@ -1,11 +1,13 @@
 [workspace]
 members = [
     "my-proc-macro",
-    "my-proc-macro-test",
+    "my-os-test",
+    "my-runtime-lib",
 ]
 
 [patch.crates-io]
 my-proc-macro = { path = "./my-proc-macro" }
+my-runtime-lib = { path = "./my-runtime-lib" }
 
 [profile.dev]
 panic = "abort"

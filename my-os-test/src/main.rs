@@ -17,19 +17,7 @@ my_proc_macro::boot_page_sv32! {
     (0x00000000 => 0x00000000, rwx);
 }
 
-#[cfg(target_pointer_width = "64")]
-global_asm!(r#"
-    .section .text.entry
-    .globl _start
-_start: 
-    .if _boot_satp_mode != 0
-    la t1, _boot_page
-    li t0, _boot_satp_mode
-    slli t0, t0, 60
-    or t0, t0, t1
-    csrw satp, t0
-    .endif
-"#);
+use my_runtime_lib as _;
 
 // PC-relocated generation in 64-bit
 /*
@@ -51,20 +39,7 @@ ffffffff80201000 <_boot_page>:
 
 */
 
-#[cfg(target_pointer_width = "32")]
-global_asm!(r#"
-    .section .text.entry
-    .globl _start
-_start: 
-    .if _boot_satp_mode != 0
-    la t1, _boot_page
-    li t0, _boot_satp_mode
-    slli t0, t0, 30
-    or t0, t0, t1
-    csrw satp, t0
-    .endif
-"#);
-
+// PC-relocated generation in 32-bit
 /*
 
 Disassembly of section .text:
