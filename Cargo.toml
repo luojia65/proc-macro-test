@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "my-proc-macro",
+    "my-proc-macro-test",
+]
+
+[patch.crates-io]
+my-proc-macro = { path = "./my-proc-macro" }
