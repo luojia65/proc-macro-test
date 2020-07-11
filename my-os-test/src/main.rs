@@ -5,18 +5,22 @@
 use panic_halt as _;
 use my_runtime_lib as _; // should be used as #[entry]
 
-// #[cfg(target_pointer_width = "64")]
-// my_proc_macro::boot_page_sv39! {
-//     (0xffffffff_80000000 => 0x00000000_80000000, rwx);
-//     (0xffffffff_00000000 => 0x00000000_00000000, rwx);
-//     (0x00000000_80000000 => 0x00000000_80000000, rwx);
-// }
+// if you don't need any boot page (i.e. run in bare mode),
+// you don't use any of my_proc_macro's macros.
+// or you need to pick one in your operating system code.
 
-// #[cfg(target_pointer_width = "32")]
-// my_proc_macro::boot_page_sv32! {
-//     (0x80000000 => 0x80000000, rwx);
-//     (0x00000000 => 0x00000000, rwx);
-// }
+#[cfg(target_pointer_width = "64")]
+my_proc_macro::boot_page_sv39! {
+    (0xffffffff_80000000 => 0x00000000_80000000, rwx);
+    (0xffffffff_00000000 => 0x00000000_00000000, rwx);
+    (0x00000000_80000000 => 0x00000000_80000000, rwx);
+}
+
+#[cfg(target_pointer_width = "32")]
+my_proc_macro::boot_page_sv32! {
+    (0x80000000 => 0x80000000, rwx);
+    (0x00000000 => 0x00000000, rwx);
+}
 
 // PC-relocated generation in 64-bit
 /*
