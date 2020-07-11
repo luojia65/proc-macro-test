@@ -105,9 +105,7 @@ _start:
 }
 
 #[proc_macro]
-pub fn boot_page_bare(item: TokenStream) -> TokenStream {
-    println!("{:?}", item);
-
+pub fn boot_page_bare(_item: TokenStream) -> TokenStream {
     quote!(
         global_asm!("
         .section .text.entry
