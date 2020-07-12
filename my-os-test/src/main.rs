@@ -18,8 +18,8 @@ my_proc_macro::boot_page_sv39! {
 
 #[cfg(target_pointer_width = "32")]
 my_proc_macro::boot_page_sv32! {
-    (0x80000000 => 0x80000000, rwx);
-    (0x00000000 => 0x00000000, rwx);
+    (0x80400000 => 0x80000000, rwx);
+    (0x00400000 => 0x00000000, rwx);
 }
 
 // PC-relocated generation in 64-bit
@@ -52,6 +52,12 @@ Disassembly of section .rodata:
 
 ffffffff80201000 <_boot_page>:
         ...
+ffffffff80201010:       2000000f                0x2000000f
+        ...
+ffffffff80201fe0:       0000000f                fence   unknown,unknown
+        ...
+ffffffff80201ff0:       2000000f                0x2000000f
+        ...
 
 */
 
@@ -80,6 +86,9 @@ Disassembly of section .text:
 Disassembly of section .rodata:
 
 80401000 <_boot_page>:
+80401000:       0000                    unimp
+80401002:       0000                    unimp
+80401004:       0000000f                fence   unknown,unknown
         ...
 
 */
