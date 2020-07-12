@@ -13,6 +13,8 @@ pub fn boot_page_sv39(item: TokenStream) -> TokenStream {
         Ok(x) => x,
     };
 
+    println!("{:x?}", entry_config);
+
     quote!(
         #[repr(align(4096))]
         #[repr(C)]
