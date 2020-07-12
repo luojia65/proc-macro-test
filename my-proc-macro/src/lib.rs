@@ -21,6 +21,7 @@ _start:
     li t0, 8 << 60
     or t0, t0, t1
     csrw satp, t0
+    sfence.vma
     
     .option push
     .option norelax
@@ -55,6 +56,7 @@ _start:
     li t0, 9 << 60
     or t0, t0, t1
     csrw satp, t0
+    sfence.vma
     
     .option push
     .option norelax
@@ -91,6 +93,7 @@ _start:
     li t0, 1 << 31
     or t0, t0, t1
     csrw satp, t0
+    sfence.vma
     
     .option push
     .option norelax

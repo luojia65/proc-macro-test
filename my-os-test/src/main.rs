@@ -34,17 +34,19 @@ ffffffff80200008:       52fd                    li      t0,-1
 ffffffff8020000a:       12fe                    slli    t0,t0,0x3f
 ffffffff8020000c:       0062e2b3                or      t0,t0,t1
 ffffffff80200010:       18029073                csrw    satp,t0
-ffffffff80200014:       00000097                auipc   ra,0x0
-ffffffff80200018:       00c0b083                ld      ra,12(ra) # ffffffff80200020 <_start+0x20>
-ffffffff8020001c:       8082                    ret
-ffffffff8020001e:       0001                    nop
-ffffffff80200020:       0028                    addi    a0,sp,8
-ffffffff80200022:       8020                    0x8020
-ffffffff80200024:       ffff                    0xffff
-ffffffff80200026:       ffff                    0xffff
+ffffffff80200014:       12000073                sfence.vma
+ffffffff80200018:       00000097                auipc   ra,0x0
+ffffffff8020001c:       0100b083                ld      ra,16(ra) # ffffffff80200028 <_start+0x28>
+ffffffff80200020:       8082                    ret
+ffffffff80200022:       00000013                nop
+ffffffff80200026:       0001                    nop
+ffffffff80200028:       0030                    addi    a2,sp,8
+ffffffff8020002a:       8020                    0x8020
+ffffffff8020002c:       ffff                    0xffff
+ffffffff8020002e:       ffff                    0xffff
 
-ffffffff80200028 <_abs_start>:
-ffffffff80200028:       0000006f                j       ffffffff80200028 <_abs_start>
+ffffffff80200030 <_abs_start>:
+ffffffff80200030:       0000006f                j       ffffffff80200030 <_abs_start>
 
 Disassembly of section .rodata:
 
@@ -64,15 +66,16 @@ Disassembly of section .text:
 80400008:       800002b7                lui     t0,0x80000
 8040000c:       0062e2b3                or      t0,t0,t1
 80400010:       18029073                csrw    satp,t0
-80400014:       00000097                auipc   ra,0x0
-80400018:       00c0a083                lw      ra,12(ra) # 80400020 <_start+0x20>
-8040001c:       8082                    ret
-8040001e:       0001                    nop
-80400020:       0024                    addi    s1,sp,8
-80400022:       8040                    0x8040
+80400014:       12000073                sfence.vma
+80400018:       00000097                auipc   ra,0x0
+8040001c:       00c0a083                lw      ra,12(ra) # 80400024 <_start+0x24>
+80400020:       8082                    ret
+80400022:       0001                    nop
+80400024:       0028                    addi    a0,sp,8
+80400026:       8040                    0x8040
 
-80400024 <_abs_start>:
-80400024:       0000006f                j       80400024 <_abs_start>
+80400028 <_abs_start>:
+80400028:       0000006f                j       80400028 <_abs_start>
 
 Disassembly of section .rodata:
 
