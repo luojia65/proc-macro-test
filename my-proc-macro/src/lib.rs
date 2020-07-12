@@ -1,10 +1,17 @@
+mod codegen;
+mod syntax;
+
 use proc_macro::TokenStream;
 use quote::quote;
-// use syn::ItemConst;
+use crate::syntax::Mode;
 
 #[proc_macro]
 pub fn boot_page_sv39(item: TokenStream) -> TokenStream {
-    println!("{:?}", item);
+    
+    let entry_config = match syntax::parse(item.into(), Mode::Sv39) {
+        Err(e) => return e.to_compile_error().into(),
+        Ok(x) => x,
+    };
 
     quote!(
         #[repr(align(4096))]
