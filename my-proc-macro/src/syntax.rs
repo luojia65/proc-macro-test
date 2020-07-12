@@ -16,9 +16,13 @@ pub struct EntryConfig {
 }
 
 impl EntryConfig {
-    pub fn new() -> Self {
+    pub fn new(mode: Mode) -> Self {
+        let cap = match mode {
+            Mode::Sv32 => 1024,
+            Mode::Sv39 | Mode::Sv48 => 512
+        };
         EntryConfig {
-            pte: vec![0; 1024]
+            pte: vec![0; cap]
         }
     }
 }
@@ -33,7 +37,7 @@ impl Index<usize> for EntryConfig {
 
 pub fn parse(input: TokenStream, mode: Mode) -> Result<EntryConfig> {
     let mut should_next_be_group = true;
-    let mut entry_config = EntryConfig::new();
+    let mut entry_config = EntryConfig::new(mode);
     for tree in input {
         match (tree, should_next_be_group) {
             (TokenTree::Group(group), true) => {
@@ -172,7 +176,7 @@ fn parse_group(group: Group, mode: Mode) -> Result<(usize, usize)> {
     }
 }
 
-/// 0..512
+/// 0..512 or 0..1024
 fn parse_virt_page_number_2(literal: Literal, mode: Mode) -> Result<usize> {
     let mut stream = TokenStream::new();
     let span = literal.span();
@@ -213,9 +217,9 @@ fn parse_virt_page_number_2(literal: Literal, mode: Mode) -> Result<usize> {
         },
     }
     let pte_index = match mode {
-        Mode::Sv32 => (vaddr >> 22) & 0x3FF,
-        Mode::Sv39 => (vaddr >> 30) & 0x1FF,
-        Mode::Sv48 => (vaddr >> 39) & 0x1FF,
+        Mode::Sv32 => (vaddr >> 22) & 0x3FF, // 1024 entries
+        Mode::Sv39 => (vaddr >> 30) & 0x1FF, // 512 entries
+        Mode::Sv48 => (vaddr >> 39) & 0x1FF, // 512 entries
     };
     Ok(pte_index)
 }
@@ -251,7 +255,7 @@ fn parse_phys_page_numbers(literal: Literal, mode: Mode) -> Result<usize> {
         Mode::Sv48 => {
             if !has_at_most_cnt_bits_u128(paddr, 56) {
                 return Err(Error::new(span, 
-                    "expected Sv39 physical address; only bits 0..56 are valid"
+                    "expected Sv48 physical address; only bits 0..56 are valid"
                 ))
             }
         },
