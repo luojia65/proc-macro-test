@@ -27,6 +27,7 @@ pub fn boot_page_sv39(item: TokenStream) -> TokenStream {
     .globl _start
 _start: 
     la t1, _boot_page
+    srli t1, t1, 12
     li t0, 8 << 60
     or t0, t0, t1
     csrw satp, t0
@@ -68,6 +69,7 @@ pub fn boot_page_sv48(item: TokenStream) -> TokenStream {
     .globl _start
 _start: 
     la t1, _boot_page
+    srli t1, t1, 12
     li t0, 9 << 60
     or t0, t0, t1
     csrw satp, t0
@@ -111,6 +113,7 @@ pub fn boot_page_sv32(item: TokenStream) -> TokenStream {
     .globl _start
 _start: 
     la t1, _boot_page
+    srli t1, t1, 12
     li t0, 1 << 31
     or t0, t0, t1
     csrw satp, t0
