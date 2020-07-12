@@ -1,5 +1,6 @@
 use proc_macro2::{TokenStream, TokenTree, Group, Ident, Spacing, Literal};
 use syn::{LitInt, parse::{Result, Error}};
+use std::ops::Index;
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -18,6 +19,14 @@ impl EntryConfig {
         EntryConfig {
             pte: vec![0; 512]
         }
+    }
+}
+
+impl Index<usize> for EntryConfig {
+    type Output = usize;
+
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.pte[idx]
     }
 }
 

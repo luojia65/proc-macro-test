@@ -13,14 +13,14 @@ pub fn boot_page_sv39(item: TokenStream) -> TokenStream {
         Ok(x) => x,
     };
 
-    println!("{:x?}", entry_config);
+    let boot_page_content = codegen::boot_page_content(&entry_config);
 
     quote!(
         #[repr(align(4096))]
         #[repr(C)]
         struct __BootPage([usize; 512]);
         #[export_name = "_boot_page"]
-        static __BOOT_PAGE: __BootPage = __BootPage([0; 512]);
+        static __BOOT_PAGE: __BootPage = __BootPage([ #boot_page_content ]);
         extern { fn _abs_start() -> !; }
         global_asm!("
     .section .text.entry
@@ -48,14 +48,20 @@ _start:
 
 #[proc_macro]
 pub fn boot_page_sv48(item: TokenStream) -> TokenStream {
-    println!("{:?}", item);
+    
+    let entry_config = match syntax::parse(item.into(), Mode::Sv48) {
+        Err(e) => return e.to_compile_error().into(),
+        Ok(x) => x,
+    };
+
+    let boot_page_content = codegen::boot_page_content(&entry_config);
 
     quote!(
         #[repr(align(4096))]
         #[repr(C)]
         struct __BootPage([usize; 512]);
         #[export_name = "_boot_page"]
-        static __BOOT_PAGE: __BootPage = __BootPage([0; 512]);
+        static __BOOT_PAGE: __BootPage = __BootPage([ #boot_page_content ]);
         extern { fn _abs_start() -> !; }
         global_asm!("
     .section .text.entry
@@ -85,14 +91,20 @@ _start:
 
 #[proc_macro]
 pub fn boot_page_sv32(item: TokenStream) -> TokenStream {
-    println!("{:?}", item);
+    
+    let entry_config = match syntax::parse(item.into(), Mode::Sv32) {
+        Err(e) => return e.to_compile_error().into(),
+        Ok(x) => x,
+    };
+
+    let boot_page_content = codegen::boot_page_content(&entry_config);
 
     quote!(
         #[repr(align(4096))]
         #[repr(C)]
         struct __BootPage([usize; 512]);
         #[export_name = "_boot_page"]
-        static __BOOT_PAGE: __BootPage = __BootPage([0; 512]);
+        static __BOOT_PAGE: __BootPage = __BootPage([ #boot_page_content ]);
         extern { fn _abs_start() -> !; }
         global_asm!("
     .section .text.entry
