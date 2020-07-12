@@ -1,6 +1,7 @@
 use proc_macro2::{TokenStream, TokenTree, Group, Ident, Spacing, Literal};
 use syn::{LitInt, parse::{Result, Error}};
 use std::ops::Index;
+use std::convert::TryFrom;
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -17,7 +18,7 @@ pub struct EntryConfig {
 impl EntryConfig {
     pub fn new() -> Self {
         EntryConfig {
-            pte: vec![0; 512]
+            pte: vec![0; 1024]
         }
     }
 }
@@ -67,7 +68,7 @@ pub fn parse(input: TokenStream, mode: Mode) -> Result<EntryConfig> {
 // returns a (pte index, page table entry value)
 fn parse_group(group: Group, mode: Mode) -> Result<(usize, usize)> {
     // does not check Group::delimiter
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Eq, PartialEq)]
     enum State {
         VaLiteral,
         PunctEq,
@@ -79,12 +80,12 @@ fn parse_group(group: Group, mode: Mode) -> Result<(usize, usize)> {
     }
     let mut should_be_next = State::VaLiteral;
     let mut flags = None;
-    let mut vaddr = None;
-    let mut paddr = None;
+    let mut vpn2 = None;
+    let mut ppn = None;
     for tree in group.stream() {
         match (tree, should_be_next) {
             (TokenTree::Literal(literal), State::VaLiteral) => {
-                vaddr = Some(parse_virt_addr(literal, mode)?);
+                vpn2 = Some(parse_virt_page_number_2(literal, mode)?);
                 should_be_next = State::PunctEq;
             },
             (TokenTree::Punct(punct), State::PunctEq) => {
@@ -104,7 +105,7 @@ fn parse_group(group: Group, mode: Mode) -> Result<(usize, usize)> {
                 should_be_next = State::PaLiteral;
             },
             (TokenTree::Literal(literal), State::PaLiteral) => {
-                paddr = Some(parse_phys_addr(literal)?);
+                ppn = Some(parse_phys_page_numbers(literal, mode)?);
                 should_be_next = State::PunctComma;
             },
             (TokenTree::Punct(punct), State::PunctComma) => {
@@ -156,26 +157,23 @@ fn parse_group(group: Group, mode: Mode) -> Result<(usize, usize)> {
             ),
         }
     }
+    if should_be_next != State::None {
+        return Err(Error::new(group.span(), 
+            "expected a complete group `(virt_addr => phys_addr, flags)`"
+        ));  
+    }
     // pte_index = vpn[2]
-    if let (Some(vaddr), Some(paddr), Some(flags)) = (vaddr, paddr, flags) {
-        // todo: use ppn and vpn instead of paddr and vaddr
-        let pte_index = match mode {
-            Mode::Sv32 => (vaddr >> 22) & 0x1FF,
-            Mode::Sv39 => (vaddr >> 30) & 0x1FF,
-            Mode::Sv48 => (vaddr >> 39) & 0x1FF,
-        };
-        let pte_value = match mode {
-            Mode::Sv32 => (paddr >> 2) | flags.bits() as usize,
-            Mode::Sv39 => (paddr >> 2) | flags.bits() as usize,
-            Mode::Sv48 => (paddr >> 2) | flags.bits() as usize,
-        };
+    if let (Some(vpn2), Some(ppn), Some(flags)) = (vpn2, ppn, flags) {
+        let pte_index = vpn2;
+        let pte_value = ppn | flags.bits() as usize; 
         Ok((pte_index, pte_value))
     } else {
         Err(Error::new(group.span(), "bug!"))
     }
 }
 
-fn parse_virt_addr(literal: Literal, mode: Mode) -> Result<usize> {
+/// 0..512
+fn parse_virt_page_number_2(literal: Literal, mode: Mode) -> Result<usize> {
     let mut stream = TokenStream::new();
     let span = literal.span();
     stream.extend(vec![TokenTree::Literal(literal)]);
@@ -214,29 +212,70 @@ fn parse_virt_addr(literal: Literal, mode: Mode) -> Result<usize> {
             }
         },
     }
-    Ok(vaddr)
+    let pte_index = match mode {
+        Mode::Sv32 => (vaddr >> 22) & 0x3FF,
+        Mode::Sv39 => (vaddr >> 30) & 0x1FF,
+        Mode::Sv48 => (vaddr >> 39) & 0x1FF,
+    };
+    Ok(pte_index)
 }
 
-fn parse_phys_addr(literal: Literal) -> Result<usize> {
+/// Output: ppn2, ppn1 and ppn0, in one usize
+/// Or the function result and page flag bits to directly get the page table entry value
+fn parse_phys_page_numbers(literal: Literal, mode: Mode) -> Result<usize> {
     let mut stream = TokenStream::new();
     let span = literal.span();
     stream.extend(vec![TokenTree::Literal(literal)]);
     let int: LitInt = syn::parse2(stream)?;
-    let paddr: usize = int.base10_parse()?;
-    if !is_lower_bits_zero(paddr, 12) {
+    let paddr: u128 = int.base10_parse()?;
+    if !is_lower_bits_zero_u128(paddr, 12) {
         return Err(Error::new(span, 
             "expected physical address with bits 0..=11 zeroed"
         ))
     }
-    // todo: in Sv32, the physical address space is over 32 bits; it's actually 34 bits
-    // should be handled properly. e.g. support oversized integer or other solutions
-    Ok(paddr)
+    match mode {
+        Mode::Sv32 => {
+            if !has_at_most_cnt_bits_u128(paddr, 34) {
+                return Err(Error::new(span, 
+                    "expected Sv32 physical address; only bits 0..34 are valid"
+                ))
+            }
+        },
+        Mode::Sv39 => {
+            if !has_at_most_cnt_bits_u128(paddr, 56) {
+                return Err(Error::new(span, 
+                    "expected Sv39 physical address; only bits 0..56 are valid"
+                ))
+            }
+        },
+        Mode::Sv48 => {
+            if !has_at_most_cnt_bits_u128(paddr, 56) {
+                return Err(Error::new(span, 
+                    "expected Sv39 physical address; only bits 0..56 are valid"
+                ))
+            }
+        },
+    }
+    let ppn = usize::try_from(paddr >> 2).expect("bug!");
+    Ok(ppn)
+}
+
+// is 0..cnt bit of `int` all zero?
+#[inline]
+fn is_lower_bits_zero_u128(int: u128, cnt: usize) -> bool {
+    int & ((1 << cnt) - 1) == 0
 }
 
 // is 0..cnt bit of `int` all zero?
 #[inline]
 fn is_lower_bits_zero(int: usize, cnt: usize) -> bool {
     int & ((1 << cnt) - 1) == 0
+}
+
+// is bits exclude 0..cnt all zero? (is bit cnt..=MAX of `int` all zero?)
+#[inline]
+fn has_at_most_cnt_bits_u128(int: u128, cnt: usize) -> bool {
+    int & ((1 << cnt) - 1) == int
 }
 
 #[inline]

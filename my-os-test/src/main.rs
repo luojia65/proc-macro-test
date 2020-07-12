@@ -18,7 +18,8 @@ my_proc_macro::boot_page_sv39! {
 
 #[cfg(target_pointer_width = "32")]
 my_proc_macro::boot_page_sv32! {
-    (0x80400000 => 0x80000000, rwx);
+    // On Sv32, physical address can be up to 34 bits
+    (0x80400000 => 0x3fffff000, rwx);
     (0x00400000 => 0x00000000, rwx);
 }
 

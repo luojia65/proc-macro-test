@@ -1,23 +1,30 @@
 use proc_macro2::TokenStream as TokenStream;
 use quote::quote;
-use crate::syntax::EntryConfig;
+use crate::syntax::{Mode, EntryConfig};
 
-pub fn boot_page_content(entry_config: &EntryConfig) -> TokenStream {
-    let pte = (0..512)
-        .map(|idx| entry_config[idx])
-        .map(syn::Index::from);
-    quote!(
-        #( #pte , )*
-    )
+pub fn boot_page_content(entry_config: &EntryConfig, mode: Mode) -> TokenStream {
+    match mode {
+        // in Sv32, virtual page number contain 10 bits
+        Mode::Sv32 => {
+            let pte = (0..1024)
+                .map(|idx| entry_config[idx])
+                .map(syn::Index::from);
+            quote!( #( #pte , )* )
+        }
+        // in Sv39 and Sv48, virtual page number contain 9 bits
+        Mode::Sv39 | Mode::Sv48 => {
+            let pte = (0..512)
+                .map(|idx| entry_config[idx])
+                .map(syn::Index::from);
+            quote!( #( #pte , )* )
+        }
+    }
 }
 
 /*
 
     Generated like:
 
-    #[export_name = "_boot_page"]
-    static __BOOT_PAGE: __BootPage = __BootPage([
-        0, 0, 0, /* and all 512 usize page table entries */
-    ]);
+    0, 0, 0, /* and all 512 usize page table entries */, 0,
 
 */

@@ -13,7 +13,7 @@ pub fn boot_page_sv39(item: TokenStream) -> TokenStream {
         Ok(x) => x,
     };
 
-    let boot_page_content = codegen::boot_page_content(&entry_config);
+    let boot_page_content = codegen::boot_page_content(&entry_config, Mode::Sv39);
 
     quote!(
         #[repr(align(4096))]
@@ -54,7 +54,7 @@ pub fn boot_page_sv48(item: TokenStream) -> TokenStream {
         Ok(x) => x,
     };
 
-    let boot_page_content = codegen::boot_page_content(&entry_config);
+    let boot_page_content = codegen::boot_page_content(&entry_config, Mode::Sv48);
 
     quote!(
         #[repr(align(4096))]
@@ -97,12 +97,12 @@ pub fn boot_page_sv32(item: TokenStream) -> TokenStream {
         Ok(x) => x,
     };
 
-    let boot_page_content = codegen::boot_page_content(&entry_config);
+    let boot_page_content = codegen::boot_page_content(&entry_config, Mode::Sv32);
 
     quote!(
         #[repr(align(4096))]
         #[repr(C)]
-        struct __BootPage([usize; 512]);
+        struct __BootPage([usize; 1024]);
         #[export_name = "_boot_page"]
         static __BOOT_PAGE: __BootPage = __BootPage([ #boot_page_content ]);
         extern { fn _abs_start() -> !; }
